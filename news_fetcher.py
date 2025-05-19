@@ -8,9 +8,12 @@ import datetime
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 FEEDS = [
-    "https://www.ign.com/articles?format=rss",
     "https://www.gamespot.com/feeds/news/",
-    "https://www.pushsquare.com/feeds/all"
+    "https://feeds.feedburner.com/ign/all",
+    "https://www.pushsquare.com/feeds/news",
+    "https://www.purexbox.com/feeds/news",
+    "https://www.eurogamer.net/rss",
+    "https://dtf.ru/rss/games"
 ]
 
 async def fetch_daily_news():
@@ -18,30 +21,41 @@ async def fetch_daily_news():
     entries = []
     for feed in FEEDS:
         d = feedparser.parse(feed)
-        entries += d.entries[:4]
-    entries = entries[:9]
-    print(f"Собрано {len(entries)} новостей.")
+        entries += d.entries[:10]
+    print(f"Собрано всего {len(entries)} новостей.")
 
-    summaries = []
-    for i, e in enumerate(entries, 1):
-        prompt = f"Сформулируй на русском короткую новость (1-2 предложения):\nЗаголовок: {e.title}\nОписание: {e.get('summary', '')}"
-        try:
-            response = openai.ChatCompletion.create(
-                model="gpt-4",
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.7,
-                max_tokens=200
-            )
-            text = response["choices"][0]["message"]["content"].strip()
-            print(f"GPT ответ {i}: {text[:60]}...")
-        except Exception as ex:
-            print(f"[Ошибка GPT для новости {i}]: {ex}")
-            text = f"{e.title}"
-        summaries.append(f"📰 <b>{text}</b>")
+    # Преобразуем список новостей в текст для GPT
+    bulk_prompt = "\n".join([f"{i+1}. {e.title} - {e.get('summary', '')[:200]}" for i, e in enumerate(entries)])
+
+    system_message = "Ты — ассистент, помогающий выбрать 10 самых важных и популярных игровых новостей дня для вечерней сводки. Используй только предоставленные новости."
+
+    user_prompt = f"""Вот список новостей за день:
+
+{bulk_prompt}
+
+Выбери 10 самых важных и популярных новостей. Для каждой составь короткое описание (1-2 предложения) на русском языке. Формат:
+1. <b>Заголовок</b>
+Описание.
+"""
+
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0.7,
+            max_tokens=1500
+        )
+        formatted_news = response["choices"][0]["message"]["content"].strip()
+        print("Сводка сформирована.")
+    except Exception as e:
+        print(f"[Ошибка GPT при составлении сводки]: {e}")
+        formatted_news = "Не удалось сгенерировать сводку."
 
     today = datetime.datetime.now().strftime("%d.%m.%Y")
-    full_text = f"🎮 <b>Вечерняя игровая сводка — {today}</b>\n\n" + "\n\n".join(summaries)
-    return full_text
+    return f"🎮 <b>Вечерняя игровая сводка — {today}</b>\n\n" + formatted_news
 
 async def generate_image():
     prompt = "Evening gaming news, PlayStation, Xbox, dramatic light, neon dark style"
