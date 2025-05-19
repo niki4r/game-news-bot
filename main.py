@@ -17,7 +17,8 @@ async def test():
         print("Картинка сгенерирована." if image else "Картинка не сгенерирована.")
 
         if image:
-            await bot.send_photo(chat_id=CHANNEL_ID, photo=image, caption="🕹 Вечерняя игровая сводка", parse_mode="HTML")
+            await bot.send_photo(chat_id=CHANNEL_ID, photo=image, caption="🎮 Вечерняя игровая сводка", parse_mode="HTML")
+            await asyncio.sleep(2)  # ⏱ Задержка перед текстом, чтобы Telegram не завис
             await bot.send_message(chat_id=CHANNEL_ID, text=text, parse_mode="HTML")
         else:
             await bot.send_message(chat_id=CHANNEL_ID, text=text, parse_mode="HTML")
