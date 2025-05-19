@@ -7,25 +7,34 @@ import datetime
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-FEEDS = [
-    "https://www.gamespot.com/feeds/news/",
-    "https://feeds.feedburner.com/ign/all",
-    "https://www.pushsquare.com/feeds/news",
-    "https://www.purexbox.com/feeds/news",
-    "https://www.eurogamer.net/rss",
-    "https://dtf.ru/rss/games"
-]
+FEEDS = {
+    "https://dtf.ru/rss/games": 12,  # приоритет
+    "https://www.gamespot.com/feeds/news/": 6,
+    "https://feeds.feedburner.com/ign/all": 6,
+    "https://www.pushsquare.com/feeds/news": 6,
+    "https://www.purexbox.com/feeds/news": 6,
+    "https://www.eurogamer.net/rss": 6
+}
 
 async def fetch_daily_news():
     print("Получение новостей...")
     entries = []
-    for feed in FEEDS:
+    for feed, count in FEEDS.items():
         d = feedparser.parse(feed)
-        entries += d.entries[:6]
+        entries += d.entries[:count]
     print(f"Собрано всего {len(entries)} новостей.")
 
+    filtered = []
+    for e in entries:
+        text = (e.title + " " + e.get("summary", "")).lower()
+        if "discount" in text or "скидка" in text or "sale" in text or "% off" in text:
+            continue
+        filtered.append(e)
+
+    print(f"Оставлено {len(filtered)} новостей после фильтрации скидок.")
+
     news_with_links = []
-    for i, e in enumerate(entries):
+    for i, e in enumerate(filtered):
         title = e.title
         summary = e.get("summary", "")[:300].replace("\n", " ")
         link = e.link
@@ -41,13 +50,14 @@ async def fetch_daily_news():
 
 Выбери 10 самых интересных новостей про PlayStation и Xbox.
 Не включай Nintendo, PC-only, фильмы, сериалы, мангу и т.п.
+ИСКЛЮЧИ любые новости о скидках, распродажах и акциях.
 
 Для каждой:
 - Переведи заголовок на русский и выдели его жирным
-- В начале поставь подходящее эмодзи: 🎮 (игра), 🛠 (обновление), 🔥 (релиз), 💬 (слух), 📉 (скидка), 🧪 (бета), 🎂 (годовщина) и т.п.
-- Кратко опиши (1–2 предложения, тоже по-русски)
+- В начале поставь подходящее эмодзи: 🎮 (игра), 🛠 (обновление), 🔥 (релиз), 💬 (слух), 🧪 (бета), 🎂 (годовщина) и т.п.
+- Кратко опиши (1–2 предложения, по-русски)
 - В конце описания вставь <a href="ССЫЛКА">Читать далее</a>
-- Не вставляй ссылку отдельно — избегай формата https://...
+- Не вставляй ссылку в формате https:// — только в <a href>
 
 Формат:
 🎮 <b>Заголовок</b>
