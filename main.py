@@ -15,10 +15,13 @@ async def test():
         print("Новости сформированы.")
         image = await generate_image()
         print("Картинка сгенерирована." if image else "Картинка не сгенерирована.")
+
         if image:
-            await bot.send_photo(chat_id=CHANNEL_ID, photo=image, caption=text, parse_mode="HTML")
+            await bot.send_photo(chat_id=CHANNEL_ID, photo=image, caption="🕹 Вечерняя игровая сводка", parse_mode="HTML")
+            await bot.send_message(chat_id=CHANNEL_ID, text=text, parse_mode="HTML")
         else:
             await bot.send_message(chat_id=CHANNEL_ID, text=text, parse_mode="HTML")
+
         print("Публикация завершена.")
     except Exception as e:
         print(f"Ошибка при выполнении: {e}")
