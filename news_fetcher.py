@@ -21,10 +21,9 @@ async def fetch_daily_news():
     entries = []
     for feed in FEEDS:
         d = feedparser.parse(feed)
-        entries += d.entries[:10]
+        entries += d.entries[:6]  # Уменьшено до 6 новостей на источник
     print(f"Собрано всего {len(entries)} новостей.")
 
-    # Преобразуем список новостей в текст и сохраняем ссылки
     news_with_links = []
     for i, e in enumerate(entries):
         title = e.title
