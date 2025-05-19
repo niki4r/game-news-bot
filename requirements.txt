@@ -1,5 +1,4 @@
-python-telegram-bot==20.8
-openai==1.14.3
+python-telegram-bot==20.7
+feedparser
+openai==0.28
 aiohttp
-beautifulsoup4
-pillow
