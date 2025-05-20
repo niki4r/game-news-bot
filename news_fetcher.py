@@ -82,6 +82,23 @@ async def fetch_daily_news():
             formatted_news = formatted_news[:3900].rsplit("\n", 1)[0] + "\n…"
 
         print("Сводка сформирована.")
+
+# Экранируем HTML в тексте, кроме тегов <b> и <a>
+    from html import escape
+    import re
+
+    def clean_html(text):
+        allowed_tags = re.compile(r'(<\/?b>|<a href="[^"]+">|<\/a>)')
+        parts = allowed_tags.split(text)
+        result = ""
+        for part in parts:
+            if allowed_tags.fullmatch(part):
+                result += part
+            else:
+                result += escape(part)
+        return result
+
+    formatted_news = clean_html(formatted_news)
     except Exception as e:
         print(f"[Ошибка GPT при составлении сводки]: {e}")
         formatted_news = "Не удалось сгенерировать сводку."
