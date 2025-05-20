@@ -4,6 +4,8 @@ import os
 from io import BytesIO
 import base64
 import datetime
+import re
+from html import escape
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
@@ -15,6 +17,17 @@ FEEDS = {
     "https://www.purexbox.com/feeds/news": 6,
     "https://www.eurogamer.net/rss": 6
 }
+
+def clean_html(text):
+    allowed_tags = re.compile(r'(<\/?.*?>|<a href=\"[^\"]+\">|</a>)')
+    parts = allowed_tags.split(text)
+    result = ""
+    for part in parts:
+        if allowed_tags.fullmatch(part):
+            result += part
+        else:
+            result += escape(part)
+    return result
 
 async def fetch_daily_news():
     print("Получение новостей...")
@@ -77,28 +90,12 @@ async def fetch_daily_news():
             max_tokens=1500
         )
         formatted_news = response["choices"][0]["message"]["content"].strip()
+        formatted_news = clean_html(formatted_news)
 
         if len(formatted_news) > 3900:
             formatted_news = formatted_news[:3900].rsplit("\n", 1)[0] + "\n…"
 
         print("Сводка сформирована.")
-
-# Экранируем HTML в тексте, кроме тегов <b> и <a>
-    from html import escape
-    import re
-
-    def clean_html(text):
-        allowed_tags = re.compile(r'(<\/?b>|<a href="[^"]+">|<\/a>)')
-        parts = allowed_tags.split(text)
-        result = ""
-        for part in parts:
-            if allowed_tags.fullmatch(part):
-                result += part
-            else:
-                result += escape(part)
-        return result
-
-    formatted_news = clean_html(formatted_news)
     except Exception as e:
         print(f"[Ошибка GPT при составлении сводки]: {e}")
         formatted_news = "Не удалось сгенерировать сводку."
